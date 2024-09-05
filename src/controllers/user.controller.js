@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
+import fs from "fs";
 import {
   deleteFromCloudinary,
   uploadOnCloudinary,
@@ -50,7 +51,9 @@ const registerUser = asyncHandler(async (req, res) => {
   //   throw new ApiError(400, "Fullname is required")
   // }
   if (
-    [username, email, fullname, password].some((field) => field?.trim() === "")
+    [username, email, fullname, password].some(
+      (field) => field === undefined || field.trim() === ""
+    )
   )
     throw new ApiError(400, "All fields are required");
 
@@ -63,25 +66,18 @@ const registerUser = asyncHandler(async (req, res) => {
   // 4) handle avatar,coverImage: upload to cloudinary
   // console.log(req.files);
 
-  let coverImageLocalFilePath;
-  if (
-    req.files &&
-    Array.isArray(req.files.coverImage) &&
-    req.files.coverImage.length > 0
-  )
-    coverImageLocalFilePath = req.files.coverImage[0].path;
-
-  const avatarLocalFilePath = req.files?.avatar[0]?.path;
+  const avatarLocalFilePath = req.files?.avatar?.[0]?.path;
+  const coverImageLocalFilePath = req.files?.coverImage?.[0]?.path;
   if (!avatarLocalFilePath) {
+    if (coverImageLocalFilePath) fs.unlinkSync(coverImageLocalFilePath);
     throw new ApiError(400, "Avatar image is required");
   }
-  console.log(coverImageLocalFilePath);
 
   const coverImage = await uploadOnCloudinary(coverImageLocalFilePath);
   const avatar = await uploadOnCloudinary(avatarLocalFilePath);
 
   if (!avatar) {
-    throw new ApiError(400, "Avatar file is required");
+    throw new ApiError(400, "Error while uploading files to server");
   }
 
   // 5) create user object -create entry in db
@@ -95,12 +91,14 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   // 6) check for user creation response
-  const createdUser = await User.findById(user._id).select(
+  const createdUser = await User.findById(user.id).select(
     "-password -refreshToken"
   );
 
   // 7) handle the response: remove password & refreshToken field
   if (!createdUser) {
+    fs.unlinkSync(coverImageLocalFilePath);
+    fs.unlinkSync(avatarLocalFilePath);
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
@@ -149,10 +147,6 @@ const loginUser = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
-  // TODO:
-  // Instead of having another DB call just delete the password from already fetched user data
-  // delete user.password;
-  // console.log(loggedInUser);
 
   return res
     .status(200)
@@ -267,17 +261,17 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
   // 1) get details from user that have to be changed
-  const { fullname, email } = req.body;
+  const { username, email } = req.body;
 
   // 2) check if the all the details that have to changed are present
-  if (!fullname || !email) {
+  if (!username || !email) {
     throw new ApiError(400, "Fullname and email are required");
   }
 
   // 3) change the details in DB
   const user = await User.findByIdAndUpdate(
     req.user?._id,
-    { $set: { fullname, email } },
+    { $set: { username, email } },
     { new: true }
   ).select("-password -refreshToken");
 
@@ -292,10 +286,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!localFilePath) {
     throw new ApiError(400, "Avatar file is missing");
   }
-  // TODO: delete old avatar image on cloudinary
-  const resp = await deleteFromCloudinary(req.user?.avatar);
+  //  delete old avatar image on cloudinary
+  const deleteResponse_avatar = await deleteFromCloudinary(req.user?.avatar);
 
-  if (!resp) {
+  if (!deleteResponse_avatar) {
     throw new ApiError(400, "Error while deleting old Avatar");
   }
 
@@ -320,8 +314,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!localFilePath) {
     throw new ApiError(400, "Cover image file is missing");
   }
-  // TODO: delete old cover image on cloudinary
-  const resp = await deleteFromCloudinary(req.user?.coverImage);
+  //  delete old cover image on cloudinary
+  const deleteResponse_coverImage = await deleteFromCloudinary(
+    req.user?.coverImage
+  );
 
   const coverImage = await uploadOnCloudinary(localFilePath);
   if (!coverImage.url) {
@@ -467,6 +463,35 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+// TODO: delete user account
+const deleteUser = asyncHandler(async (req, res) => {
+  // TODO: delete all the playlists,likes,comments,etc. first
+
+  // Delete user's files from cloudinary
+  const avatar = await deleteFromCloudinary(req.user.avatar);
+  const coverImage = await deleteFromCloudinary(req.user.coverImage);
+
+  // Check if deletion from cloudinary was successful
+  if (!avatar || !coverImage) {
+    throw new ApiError(500, "Error deleting user profile");
+  }
+
+  // Delete user details from the database
+  const user = await User.findByIdAndDelete(req.user.id);
+
+  // Check if user deletion was successful
+  if (!user) {
+    throw new ApiError(500, "Error deleting user profile");
+  }
+
+  // Return success response
+  res.status(200).json({
+    status: 200,
+    data: {},
+    message: "User profile deleted successfully",
+  });
+});
+
 export {
   registerUser,
   loginUser,
@@ -479,4 +504,5 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  deleteUser,
 };
