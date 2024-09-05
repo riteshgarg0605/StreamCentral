@@ -1,7 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import dotenv from "dotenv";
-import { response } from "express";
 dotenv.config({ path: "./.env" });
 
 cloudinary.config({
@@ -15,10 +14,13 @@ const uploadOnCloudinary = async (localFilePath) => {
     if (!localFilePath) return null;
     // Upload file to cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "image",
+      resource_type: "auto",
+      transformation: [
+        {
+          quality: "auto:good",
+        },
+      ],
     });
-    // console.log("File has been upload on cloudinary successfully!!");
-    console.log("Cloudinary URL: ", response.url);
     fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
@@ -35,11 +37,7 @@ const deleteFromCloudinary = async (url) => {
       url.lastIndexOf(".")
     );
     // destroy file from cloudinary
-    console.log("Deleting old file from cloudinary");
-
     const response = await cloudinary.uploader.destroy(publicId);
-    // console.log("File has been deleted from cloudinary successfully!!");
-    console.log("Cloudinary res: ", response);
     return response;
   } catch (error) {
     console.log(error);
