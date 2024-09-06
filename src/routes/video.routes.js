@@ -9,11 +9,17 @@ import {
 } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-
 const router = Router();
 
+const optionalAuth = (req, res, next) => {
+  if (req.cookies?.accessToken || req.header("Authorization")) {
+    return verifyJWT(req, res, next);
+  }
+  next();
+};
+
 router.route("/all").get(getAllVideos);
-router.route("/id/:_id").get(getVideoById);
+router.route("/id/:_id").get(optionalAuth, getVideoById);
 
 // Secured Routes
 router.route("/publish").post(

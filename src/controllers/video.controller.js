@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {
@@ -114,7 +115,14 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video not found");
   }
 
-  // 3) send res
+  // 3) If a user is logged in, add the video to user's watchHistory
+  if (req.user) {
+    await User.findByIdAndUpdate(req.user._id, {
+      $push: { watchHistory: videoId },
+    });
+  }
+
+  // 4) send res
   return res
     .status(200)
     .json(new ApiResponse(200, { video }, "Video found successfully"));
