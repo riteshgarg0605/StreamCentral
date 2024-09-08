@@ -1,5 +1,6 @@
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
+import { Like } from "../models/like.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -11,18 +12,68 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, sortType = "desc" } = req.query;
 
   // 2) build the aggregation pipeline
-  const match = { video: mongoose.Types.ObjectId.createFromHexString(videoId) };
-  console.log(match);
-  const sort = { ["createdAt"]: sortType === "asc" ? 1 : -1 };
+  const commentsAggregate = Comment.aggregate([
+    {
+      $match: { video: mongoose.Types.ObjectId.createFromHexString(videoId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likesCount: {
+          $size: "$likes",
+        },
+        owner: {
+          $first: "$owner",
+        },
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $sort: { ["createdAt"]: sortType === "asc" ? 1 : -1 },
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        likesCount: 1,
+        owner: {
+          username: 1,
+          fullName: 1,
+          avatar: 1,
+        },
+        isLiked: 1,
+      },
+    },
+  ]);
 
   const options = {
     page: parseInt(page),
     limit: parseInt(limit),
   };
 
-  // 3) perform the aggregation query
-  const aggregate = Comment.aggregate([{ $match: match }, { $sort: sort }]);
-  const result = await Comment.aggregatePaginate(aggregate, options);
+  // 3) perform pagination
+  const result = await Comment.aggregatePaginate(commentsAggregate, options);
   if (!result) {
     throw new ApiError(500, "Error fetching comments");
   }
@@ -36,17 +87,17 @@ const getVideoComments = asyncHandler(async (req, res) => {
 });
 
 const addComment = asyncHandler(async (req, res) => {
-  // 1) check if video is present in db or not
+  // 1) check if content is sent in the req.body or not
+  const content = req.body?.content;
+  if (!content || !req.body) {
+    throw new ApiError(400, "Comment's content is required");
+  }
+
+  // 2) check if video is present in db or not
   const videoId = req.params.id;
   const video = await Video.findById(videoId);
   if (!video) {
     throw new ApiError(404, "Video not found");
-  }
-
-  // 2) check if content is sent in the req.body or not
-  const content = req.body?.content;
-  if (!content || !req.body) {
-    throw new ApiError(400, "Comment's content is required");
   }
 
   // 3) save comment in db
@@ -84,7 +135,7 @@ const updateComment = asyncHandler(async (req, res) => {
   if (!comment) {
     throw new ApiError(404, "Comment not foumd");
   }
-  if (comment.owner != req.user.id) {
+  if (comment.owner.toString() !== req.user.id.toString()) {
     throw new ApiError(401, "Unauthorised request");
   }
 
@@ -113,11 +164,19 @@ const deleteComment = asyncHandler(async (req, res) => {
   if (!comment) {
     throw new ApiError(500, "Comment not foumd");
   }
-  if (comment.owner != req.user.id) {
+  if (comment?.owner.toString() !== req.user?._id.toString()) {
     throw new ApiError(401, "Unauthorised request");
   }
 
   // 3) delete comment from db
+
+  // delete all the likes of the comment
+  await Like.deleteMany({
+    comment: commentId,
+    likedBy: req.user,
+  });
+
+  // delete the comment
   const deletedComment = await Comment.findByIdAndDelete(commentId);
   if (!deletedComment) {
     throw new ApiError(500, "Error deleting the comment");
@@ -126,7 +185,7 @@ const deleteComment = asyncHandler(async (req, res) => {
   // 4)send res
   res
     .status(200)
-    .json(new ApiResponse(200, deletedComment, "Comment deleted successfully"));
+    .json(new ApiResponse(200, {}, "Comment deleted successfully"));
 });
 
 export { getVideoComments, addComment, deleteComment, updateComment };

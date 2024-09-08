@@ -8,9 +8,9 @@ import {
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 const router = Router();
 
-router.route("/all/:id").get(getVideoComments);
-router.route("/add-comment/:id").post(verifyJWT, addComment);
-router.route("/update-comment/:id").patch(verifyJWT, updateComment);
-router.route("/delete-comment/:id").delete(verifyJWT, deleteComment);
+router.route("/all/:videoId").get(getVideoComments);
+router.route("/add-comment/:videoId").post(verifyJWT, addComment);
+router.route("/update-comment/:commentId").patch(verifyJWT, updateComment);
+router.route("/delete-comment/:commentId").delete(verifyJWT, deleteComment);
 
 export default router;
