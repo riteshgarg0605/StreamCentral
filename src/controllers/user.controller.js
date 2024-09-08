@@ -162,7 +162,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  console.log("User ID:", req.user._id);
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -170,7 +169,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     },
     { new: true } //option to get new updated user value
   );
-  console.log("Updated User:", user);
   return res
     .status(200)
     .clearCookie("accessToken", cookieOptions)
@@ -403,9 +401,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
-  console.log(req.user);
-  // const userid = req.user._id.toString();
-
   const user = await User.aggregate([
     {
       $match: {
@@ -463,7 +458,6 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
-// TODO: delete user account
 const deleteUser = asyncHandler(async (req, res) => {
   // TODO: delete all the playlists,likes,comments,etc. first
 
