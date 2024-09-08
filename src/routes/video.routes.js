@@ -19,7 +19,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 router.route("/all").get(getAllVideos);
-router.route("/id/:_id").get(optionalAuth, getVideoById);
+router.route("/id/:videoId").get(optionalAuth, getVideoById);
 
 // Secured Routes
 router.route("/publish").post(
@@ -36,23 +36,12 @@ router.route("/publish").post(
   ]),
   publishVideo
 );
-router.route("/update/:_id").patch(
-  verifyJWT,
-  upload.fields([
-    {
-      name: "thumbnail",
-      maxCount: 1,
-    },
-    {
-      name: "videoFile",
-      maxCount: 1,
-    },
-  ]),
-  updateVideo
-);
 router
-  .route("/toggle-publish-status/:_id")
+  .route("/update/:videoId")
+  .patch(verifyJWT, upload.single("thumbnail"), updateVideo);
+router
+  .route("/toggle-publish-status/:videoId")
   .patch(verifyJWT, togglePublishStatus);
-router.route("/delete/:_id").delete(verifyJWT, deleteVideo);
+router.route("/delete/:videoId").delete(verifyJWT, deleteVideo);
 
 export default router;
