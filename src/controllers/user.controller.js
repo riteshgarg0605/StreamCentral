@@ -41,42 +41,42 @@ const registerUser = asyncHandler(async (req, res) => {
   // 7) handle the response: remove password & refreshToken field
   // 8) return response to frontend
 
-  // 1) get user details from the frontend
-  // console.log(req.body);
-
+  // 1) get user details and files from the frontend
   const { username, email, fullname, password } = req.body;
+  const avatarLocalFilePath = req.files?.avatar?.[0]?.path;
+  const coverImageLocalFilePath = req.files?.coverImage?.[0]?.path;
 
   // 2) perform validation: not empty
-  // if (fullname === "") {
-  //   throw new ApiError(400, "Fullname is required")
-  // }
   if (
     [username, email, fullname, password].some(
       (field) => field === undefined || field.trim() === ""
     )
-  )
+  ) {
+    await fs.promises.unlink(avatarLocalFilePath);
+    await fs.promises.unlink(coverImageLocalFilePath);
     throw new ApiError(400, "All fields are required");
+  }
 
   // 3) check if user already exists: through username or email
   const existingUser = await User.findOne({ $or: [{ username }, { email }] });
   if (existingUser) {
+    await fs.promises.unlink(avatarLocalFilePath);
+    await fs.promises.unlink(coverImageLocalFilePath);
     throw new ApiError(400, "Username or email already exists");
   }
 
   // 4) handle avatar,coverImage: upload to cloudinary
-  // console.log(req.files);
 
-  const avatarLocalFilePath = req.files?.avatar?.[0]?.path;
-  const coverImageLocalFilePath = req.files?.coverImage?.[0]?.path;
   if (!avatarLocalFilePath) {
-    if (coverImageLocalFilePath) fs.unlinkSync(coverImageLocalFilePath);
+    if (coverImageLocalFilePath)
+      await fs.promises.unlink(coverImageLocalFilePath);
     throw new ApiError(400, "Avatar image is required");
   }
 
   const coverImage = await uploadOnCloudinary(coverImageLocalFilePath);
   const avatar = await uploadOnCloudinary(avatarLocalFilePath);
 
-  if (!avatar) {
+  if (!avatar || !coverImage) {
     throw new ApiError(400, "Error while uploading files to server");
   }
 
@@ -97,15 +97,17 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // 7) handle the response: remove password & refreshToken field
   if (!createdUser) {
-    fs.unlinkSync(coverImageLocalFilePath);
-    fs.unlinkSync(avatarLocalFilePath);
+    await fs.promises.unlink(avatarLocalFilePath);
+    await fs.promises.unlink(coverImageLocalFilePath);
+    deleteFromCloudinary(avatar);
+    deleteFromCloudinary(coverImage);
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
   // 8) return response to frontend
   return res
     .status(201)
-    .json(new ApiResponse(200, createdUser, "User registered successfully!!"));
+    .json(new ApiResponse(201, createdUser, "User registered successfully!!"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -404,11 +406,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
     {
       $match: {
-        // both are working below:
-        // _id: new mongoose.Types.ObjectId(`${req.user._id}`),
-        _id: mongoose.Types.ObjectId.createFromHexString(
-          req.user._id.toString()
-        ),
+        _id: new mongoose.Types.ObjectId(req.user._id.toString()),
       },
     },
     {

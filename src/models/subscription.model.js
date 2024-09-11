@@ -1,17 +1,18 @@
 import mongoose, { Schema } from "mongoose";
-import { User } from "./user.model";
 
 const subscriptionSchema = new Schema(
   {
     //one who is subscribing
-    subscribe: {
+    subscriber: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
     //one to whom subscriber is subscribing
     channel: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
   },
   { timestamps: true }

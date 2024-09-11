@@ -8,13 +8,19 @@ import mongoose from "mongoose";
 
 const getVideoComments = asyncHandler(async (req, res) => {
   // 1) extract the query parameters and videoId
-  const videoId = req.params.id;
+  const { videoId } = req.params;
+  if (!videoId) {
+    throw new ApiError(400, "Video id is invalid");
+  }
+
   const { page = 1, limit = 10, sortType = "desc" } = req.query;
 
   // 2) build the aggregation pipeline
   const commentsAggregate = Comment.aggregate([
     {
-      $match: { video: mongoose.Types.ObjectId.createFromHexString(videoId) },
+      $match: {
+        video: new mongoose.Types.ObjectId(videoId),
+      },
     },
     {
       $lookup: {
@@ -94,7 +100,7 @@ const addComment = asyncHandler(async (req, res) => {
   }
 
   // 2) check if video is present in db or not
-  const videoId = req.params.id;
+  const { videoId } = req.params;
   const video = await Video.findById(videoId);
   if (!video) {
     throw new ApiError(404, "Video not found");
@@ -119,7 +125,7 @@ const addComment = asyncHandler(async (req, res) => {
 
 const updateComment = asyncHandler(async (req, res) => {
   // 1) check if comment is present in req.params
-  const commentId = req.params.id;
+  const { commentId } = req.params;
   if (!commentId) {
     throw new ApiError(400, "Comment Id is required");
   }
@@ -154,7 +160,7 @@ const updateComment = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
   // 1) check if comment is present in req.params
-  const commentId = req.params.id;
+  const { commentId } = req.params;
   if (!commentId) {
     throw new ApiError(400, "Comment Id is required");
   }

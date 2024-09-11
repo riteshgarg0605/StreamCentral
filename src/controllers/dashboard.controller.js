@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
 import { Subscription } from "../models/subscription.model.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 // get the channel stats like total video views, total subscribers, total videos, total likes etc.
 const getChannelStats = asyncHandler(async (req, res) => {
@@ -13,7 +13,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const totalSubscribers = await Subscription.aggregate([
     {
       $match: {
-        channel: new mongoose.Types.ObjectId.createFromHexString(userId),
+        channel: new mongoose.Types.ObjectId(userId),
       },
     },
     {
@@ -29,7 +29,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const video = await Video.aggregate([
     {
       $match: {
-        owner: new mongoose.Types.ObjectId.createFromHexString(userId),
+        owner: new mongoose.Types.ObjectId(userId),
       },
     },
     {
@@ -76,7 +76,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, channelStats, "Channel stats fetched successfully")
+      new ApiResponse(200, channelStats, "Channel's stats fetched successfully")
     );
 });
 
@@ -89,7 +89,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
   const videos = await Video.aggregate([
     {
       $match: {
-        owner: new mongoose.Types.ObjectId.createFromHexString(userId),
+        owner: new mongoose.Types.ObjectId(userId),
       },
     },
     {
@@ -118,16 +118,17 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     {
       $project: {
         _id: 1,
-        videoFile: 1,
-        thumbnail: 1,
         title: 1,
         description: 1,
+        videoFile: 1,
+        thumbnail: 1,
         createdAt: {
           year: 1,
           month: 1,
           day: 1,
         },
         isPublished: 1,
+        views: 1,
         likesCount: 1,
       },
     },
@@ -136,7 +137,9 @@ const getChannelVideos = asyncHandler(async (req, res) => {
   // 3) send res
   return res
     .status(200)
-    .json(new ApiResponse(200, videos, "Channel stats fetched successfully"));
+    .json(
+      new ApiResponse(200, videos, "Channel's videos fetched successfully")
+    );
 });
 
 export { getChannelStats, getChannelVideos };

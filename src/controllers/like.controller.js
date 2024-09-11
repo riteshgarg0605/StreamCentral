@@ -1,13 +1,13 @@
-import mongoose, { isValidObjectId } from "mongoose";
+import mongoose, { isObjectIdOrHexString } from "mongoose";
 import { Like } from "../models/like.model.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import ApiError from "../utils/ApiError.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   // 1) check if video exists
   const { videoId } = req.params;
-  if (!isValidObjectId(videoId)) {
+  if (!isObjectIdOrHexString(videoId)) {
     throw new ApiError(400, "Video Id is invalid");
   }
 
@@ -31,13 +31,21 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   }
 
   // 4) send res
-  return res.status(200).json(new ApiResponse(200, isLiked));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        isLiked,
+        isLiked ? "Video liked successfully" : "Video disliked successfully"
+      )
+    );
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
   // 1) check if comment exists
   const { commentId } = req.params;
-  if (!isValidObjectId(commentId)) {
+  if (!isObjectIdOrHexString(commentId)) {
     throw new ApiError(400, "Comment Id is invalid");
   }
 
@@ -61,7 +69,15 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   }
 
   // 4) send res
-  return res.status(200).json(new ApiResponse(200, isLiked));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        isLiked,
+        isLiked ? "Comment liked successfully" : "Comment disliked successfully"
+      )
+    );
 });
 
 // controller to get all videos liked by the loggedIn user
@@ -70,7 +86,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   const likedVideosAggegate = await Like.aggregate([
     {
       $match: {
-        likedBy: new mongoose.Types.ObjectId.createFromHexString(req.user?._id),
+        likedBy: new mongoose.Types.ObjectId(req.user?._id),
       },
     },
     {

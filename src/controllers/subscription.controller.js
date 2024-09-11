@@ -1,10 +1,7 @@
-import mongoose, {
-  isObjectIdOrHexString,
-  isObjectIdOrHexString,
-} from "mongoose";
-import asyncHandler from "../utils/asyncHandler.js";
-import ApiError from "../utils/ApiError.js";
-import ApiResponse from "../utils/ApiResponse.js";
+import mongoose, { isObjectIdOrHexString } from "mongoose";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { Subscription } from "../models/subscription.model.js";
 
 const toggleSubscription = asyncHandler(async (req, res) => {
@@ -29,7 +26,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     resMsg = "Unsubscribed successfully";
   } else {
     await Subscription.create({
-      subscriber: req.user?._id,
+      subscriber: req.user._id,
       channel: channelId,
     });
     subscribed = true;
@@ -52,7 +49,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const subscribers = await Subscription.aggregate([
     {
       $match: {
-        channel: new mongoose.Types.ObjectId.createFromHexString(channelId),
+        channel: new mongoose.Types.ObjectId(channelId),
       },
     },
     {
@@ -127,9 +124,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
   const subscribedChannels = await Subscription.aggregate([
     {
       $match: {
-        subscriber: new mongoose.Types.ObjectId.createFromHexString(
-          subscriberId
-        ),
+        subscriber: new mongoose.Types.ObjectId(subscriberId),
       },
     },
     {

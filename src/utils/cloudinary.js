@@ -21,23 +21,29 @@ const uploadOnCloudinary = async (localFilePath) => {
         },
       ],
     });
-    fs.unlinkSync(localFilePath);
+    // fs.unlinkSync(localFilePath);
+    await fs.promises.unlink(localFilePath);
     return response;
   } catch (error) {
-    fs.unlinkSync(localFilePath);
+    // fs.unlinkSync(localFilePath);
+    await fs.promises.unlink(localFilePath);
     console.log(error);
     return null;
   }
 };
-const deleteFromCloudinary = async (url) => {
+const deleteFromCloudinary = async (url, resource_type = "image") => {
   try {
     if (!url) return null;
+    console.log(url);
     const publicId = url.substring(
       url.lastIndexOf("/") + 1,
       url.lastIndexOf(".")
     );
+    console.log(publicId);
     // destroy file from cloudinary
-    const response = await cloudinary.uploader.destroy(publicId);
+    const response = await cloudinary.uploader.destroy(publicId, {
+      resource_type,
+    });
     return response;
   } catch (error) {
     console.log(error);
