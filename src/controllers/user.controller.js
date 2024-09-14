@@ -44,7 +44,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // 1) get user details and files from the frontend
   const { username, email, fullname, password } = req.body;
   const avatarLocalFilePath = req.files?.avatar?.[0]?.path;
-  const coverImageLocalFilePath = req.files?.coverImage?.[0]?.path;
+  const coverImgLocalFilePath = req.files?.coverImage?.[0]?.path;
 
   // 2) perform validation: not empty
   if (
@@ -52,28 +52,27 @@ const registerUser = asyncHandler(async (req, res) => {
       (field) => field === undefined || field.trim() === ""
     )
   ) {
-    await fs.promises.unlink(avatarLocalFilePath);
-    await fs.promises.unlink(coverImageLocalFilePath);
+    if (avatarLocalFilePath) await fs.promises.unlink(avatarLocalFilePath);
+    if (coverImgLocalFilePath) await fs.promises.unlink(coverImgLocalFilePath);
     throw new ApiError(400, "All fields are required");
   }
 
   // 3) check if user already exists: through username or email
   const existingUser = await User.findOne({ $or: [{ username }, { email }] });
   if (existingUser) {
-    await fs.promises.unlink(avatarLocalFilePath);
-    await fs.promises.unlink(coverImageLocalFilePath);
+    if (avatarLocalFilePath) await fs.promises.unlink(avatarLocalFilePath);
+    if (coverImgLocalFilePath) await fs.promises.unlink(coverImgLocalFilePath);
     throw new ApiError(400, "Username or email already exists");
   }
 
   // 4) handle avatar,coverImage: upload to cloudinary
 
   if (!avatarLocalFilePath) {
-    if (coverImageLocalFilePath)
-      await fs.promises.unlink(coverImageLocalFilePath);
+    if (coverImgLocalFilePath) await fs.promises.unlink(coverImgLocalFilePath);
     throw new ApiError(400, "Avatar image is required");
   }
 
-  const coverImage = await uploadOnCloudinary(coverImageLocalFilePath);
+  const coverImage = await uploadOnCloudinary(coverImgLocalFilePath);
   const avatar = await uploadOnCloudinary(avatarLocalFilePath);
 
   if (!avatar || !coverImage) {
@@ -98,7 +97,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // 7) handle the response: remove password & refreshToken field
   if (!createdUser) {
     await fs.promises.unlink(avatarLocalFilePath);
-    await fs.promises.unlink(coverImageLocalFilePath);
+    await fs.promises.unlink(coverImgLocalFilePath);
     deleteFromCloudinary(avatar);
     deleteFromCloudinary(coverImage);
     throw new ApiError(500, "Something went wrong while registering the user");
