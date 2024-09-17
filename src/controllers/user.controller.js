@@ -264,7 +264,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   // 2) check if the all the details that have to changed are present
   if (!username || !email) {
-    throw new ApiError(400, "Fullname and email are required");
+    throw new ApiError(400, "Username and email are required");
   }
 
   // 3) change the details in DB

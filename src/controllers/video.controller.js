@@ -241,7 +241,8 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  if (!video) {
+
+  if (video.length === 0) {
     throw new ApiError(404, "Video not found");
   }
 
