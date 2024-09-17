@@ -142,7 +142,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!likedVideosAggegate) {
+  if (likedVideosAggegate.length === 0) {
     throw new ApiError(404, "No videos found");
   }
 

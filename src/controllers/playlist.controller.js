@@ -32,8 +32,8 @@ const createPlaylist = asyncHandler(async (req, res) => {
 const updatePlaylist = asyncHandler(async (req, res) => {
   // 1) extract the name and description from the request body
   const { name, description } = req.body;
-  if (!name || !description) {
-    throw new ApiError(400, "Name and description is required");
+  if (!(name || description)) {
+    throw new ApiError(400, "Name or description is required");
   }
 
   // 2) check if playlist exists or not
@@ -41,7 +41,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
   if (!isObjectIdOrHexString(playlistId)) {
     throw new ApiError(400, "Playlist Id is invalid");
   }
-  const playlist = Playlist.findById(playlistId, { id, owner });
+  const playlist = await Playlist.findById(playlistId, { id, owner });
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -52,7 +52,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
   }
 
   // 4) update the playlist
-  const updatedPlaylist = Playlist.findByIdAndUpdate(
+  const updatedPlaylist = await Playlist.findByIdAndUpdate(
     playlistId,
     { $set: { name, description } },
     { new: true }
@@ -72,7 +72,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
   if (!isObjectIdOrHexString(playlistId)) {
     throw new ApiError(400, "Playlist Id is invalid");
   }
-  const playlist = Playlist.findById(playlistId, { id, owner });
+  const playlist = await Playlist.findById(playlistId, { id, owner });
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -91,7 +91,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   // 1) check for playlistId & videoId
-  const { playlistId, videoId } = req.params;
+  const { videoId, playlistId } = req.params;
   if (!isObjectIdOrHexString(playlistId)) {
     throw new ApiError(400, "Playlist Id is invalid");
   }
@@ -100,8 +100,8 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   }
 
   // 2)check if playlist and video exists or not
-  const playlist = Playlist.findById(playlistId, { id, owner });
-  const video = Video.findById(videoId, { id, owner });
+  const playlist = await Playlist.findById(playlistId);
+  const video = await Video.findById(videoId);
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -147,8 +147,8 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   }
 
   // 2)check if playlist and video exists or not
-  const playlist = Playlist.findById(playlistId, { id, owner, videos });
-  const video = Video.findById(videoId, { id, owner });
+  const playlist = await Playlist.findById(playlistId, { id, owner, videos });
+  const video = await Video.findById(videoId, { id, owner });
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -248,7 +248,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
   if (!isObjectIdOrHexString(playlistId)) {
     throw new ApiError(400, "Playlist Id is invalid");
   }
-  const playlist = Playlist.findById(playlistId, { id, owner });
+  const playlist = await Playlist.findById(playlistId);
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -271,11 +271,13 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         localField: "videos",
         foreignField: "_id",
         as: "videos",
-        pipeline: {
-          $match: {
-            "videos.isPublished": true,
+        pipeline: [
+          {
+            $match: {
+              "videos.isPublished": true,
+            },
           },
-        },
+        ],
       },
     },
     {

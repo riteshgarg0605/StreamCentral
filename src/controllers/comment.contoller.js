@@ -13,9 +13,15 @@ const getVideoComments = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video id is invalid");
   }
 
+  // 2) check if video is avaialable
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
   const { page = 1, limit = 10, sortType = "desc" } = req.query;
 
-  // 2) build the aggregation pipeline
+  // 3) build the aggregation pipeline
   const commentsAggregate = Comment.aggregate([
     {
       $match: {
@@ -78,18 +84,19 @@ const getVideoComments = asyncHandler(async (req, res) => {
     limit: parseInt(limit),
   };
 
-  // 3) perform pagination
+  // 4) perform pagination
   const result = await Comment.aggregatePaginate(commentsAggregate, options);
   if (!result) {
     throw new ApiError(500, "Error fetching comments");
   }
 
-  // 4) handle the result and send response
-  let resMsg = "Comments fetched successfully";
+  // 5) handle the result and send response
   if (!result.docs.length) {
-    resMsg = "No comments available";
+    res.status(200).json(new ApiResponse(200, {}, "No comments available"));
   }
-  res.status(200).json(new ApiResponse(200, result, resMsg));
+  res
+    .status(200)
+    .json(new ApiResponse(200, result, "Comments fetched successfully"));
 });
 
 const addComment = asyncHandler(async (req, res) => {
