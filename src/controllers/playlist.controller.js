@@ -32,7 +32,15 @@ const createPlaylist = asyncHandler(async (req, res) => {
 const updatePlaylist = asyncHandler(async (req, res) => {
   // 1) extract the name and description from the request body
   const { name, description } = req.body;
-  if (!(name || description)) {
+
+  // create an empty object to store the fields to be updated
+  const fieldsToBeUpdated = {};
+
+  // check which fields are sent by the user and add them to fieldsToBeUpdated object
+  if (name) fieldsToBeUpdated.name = name;
+  if (description) fieldsToBeUpdated.description = description;
+
+  if (Object.keys(fieldsToBeUpdated).length === 0) {
     throw new ApiError(400, "Name or description is required");
   }
 
@@ -41,7 +49,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
   if (!isObjectIdOrHexString(playlistId)) {
     throw new ApiError(400, "Playlist Id is invalid");
   }
-  const playlist = await Playlist.findById(playlistId, { id, owner });
+  const playlist = await Playlist.findById(playlistId);
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -57,6 +65,9 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     { $set: { name, description } },
     { new: true }
   );
+  if (!updatePlaylist) {
+    throw new ApiError(500, "Unable to update playlist");
+  }
 
   // 5) send res
   res
@@ -72,7 +83,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
   if (!isObjectIdOrHexString(playlistId)) {
     throw new ApiError(400, "Playlist Id is invalid");
   }
-  const playlist = await Playlist.findById(playlistId, { id, owner });
+  const playlist = await Playlist.findById(playlistId);
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }
@@ -147,8 +158,8 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   }
 
   // 2)check if playlist and video exists or not
-  const playlist = await Playlist.findById(playlistId, { id, owner, videos });
-  const video = await Video.findById(videoId, { id, owner });
+  const playlist = await Playlist.findById(playlistId);
+  const video = await Video.findById(videoId);
   if (!playlist) {
     throw new ApiError(404, "Playlist not found");
   }

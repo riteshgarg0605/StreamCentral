@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Subscription } from "../models/subscription.model.js";
+import { User } from "../models/user.model.js";
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   // 1) check if channel id is valid
@@ -11,7 +12,15 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid channelId");
   }
 
-  // 2) check if the user is a subscriber or not
+  // 2) check if the channel exists or not
+  const channelExists = await User.findById(channelId);
+  console.log(channelExists);
+
+  if (!channelExists) {
+    throw new ApiError(404, "Channel does not exist");
+  }
+
+  // 3) check if the user is a subscriber or not
   const isSubscribed = await Subscription.findOne({
     subscriber: req.user?._id,
     channel: channelId,
@@ -33,7 +42,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     resMsg = "Subscribed successfully";
   }
 
-  // 3) send res
+  // 4) send res
   return res.status(200).json(new ApiResponse(200, subscribed, resMsg));
 });
 
@@ -45,7 +54,13 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Channel id is invalid");
   }
 
-  // 2) fetch the subscribers list
+  // 2) check if the channel exists or not
+  const channelExists = await User.findById(channelId);
+  if (!channelExists) {
+    throw new ApiError(404, "Channel does not exist");
+  }
+
+  // 3) fetch the subscribers list
   const subscribers = await Subscription.aggregate([
     {
       $match: {
@@ -104,7 +119,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     },
   ]);
 
-  // 3) send res
+  // 4) send res
   return res
     .status(200)
     .json(

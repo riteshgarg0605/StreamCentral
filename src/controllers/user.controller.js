@@ -9,6 +9,7 @@ import {
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { Playlist } from "../models/playlist.model.js";
 
 const cookieOptions = {
   httpOnly: true,
@@ -458,6 +459,32 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 const deleteUser = asyncHandler(async (req, res) => {
   // TODO: delete all the playlists,likes,comments,etc. first
 
+  // delete all the user's playlists
+  await Playlist.deleteMany({
+    owner: new mongoose.Types.ObjectId(req.user.id),
+  });
+
+  // delete all the user's likes on videos and comments
+  await Like.deleteMany({
+    likedBy: new mongoose.Types.ObjectId(req.user.id),
+  });
+
+  // delete all the user's comments on all videos
+  await Comment.deleteMany({
+    owner: new mongoose.Types.ObjectId(req.user.id),
+  });
+
+  // delete all the videos uploaded by the user
+  // Fetch all videos uploaded by the user
+  const userVideos = await Video.find({
+    owner: new mongoose.Types.ObjectId(req.user.id),
+  });
+
+  // Delete each video file from Cloudinary
+  for (const video of userVideos) {
+    await deleteFromCloudinary(video.videoFile);
+    await deleteFromCloudinary(video.thumbnail);
+  }
   // Delete user's files from cloudinary
   const avatar = await deleteFromCloudinary(req.user.avatar);
   const coverImage = await deleteFromCloudinary(req.user.coverImage);
