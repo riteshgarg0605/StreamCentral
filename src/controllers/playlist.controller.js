@@ -232,7 +232,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!playlists) {
+  if (playlists.length === 0) {
     throw new ApiError(404, "No playlist found");
   }
 
@@ -271,13 +271,11 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         localField: "videos",
         foreignField: "_id",
         as: "videos",
-        pipeline: [
-          {
-            $match: {
-              "videos.isPublished": true,
-            },
-          },
-        ],
+      },
+    },
+    {
+      $match: {
+        "videos.isPublished": true,
       },
     },
     {
