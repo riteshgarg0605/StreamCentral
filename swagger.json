@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "StreamCentral",
-    "description": "StreamCentral is a backend project for a video hosting platform. It is built with Node.js, Express.js, MongoDB, and other tools. It supports features like user authentication, video uploads, likes, comments, playlists and subscriptions. It follows best practices for security and uses token-based authentication with JWT and password hashing with bcrypt.",
+    "description": "StreamCentral is a backend project for a video hosting platform. It is built with Node.js, Express.js, MongoDB, and other tools. It supports features like user authentication, video uploads, likes, comments, playlists and subscriptions. It follows best practices for security and uses token-based authentication with JWT and password hashing with bcrypt.\n#### Github Repo: [Link](https://github.com/riteshgarg0605/StreamCentral) \n#### To test the APIs effectively, please visit the [Postman documentation](https://documenter.getpostman.com/view/22903663/2sAXqtb23W).\nClick the **Run in Postman** button at the top right corner of the page to seamlessly explore and utilize all available APIs.  ",
     "version": "1.0.0"
   },
   "servers": [
