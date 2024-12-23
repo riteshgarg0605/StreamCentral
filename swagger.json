@@ -1,0 +1,2948 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "StreamCentral",
+    "description": "StreamCentral is a backend project for a video hosting platform. It is built with Node.js, Express.js, MongoDB, and other tools. It supports features like user authentication, video uploads, likes, comments, playlists and subscriptions. It follows best practices for security and uses token-based authentication with JWT and password hashing with bcrypt.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://streamcentral.onrender.com"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Default"
+    },
+    {
+      "name": "User",
+      "description": "The **User folder** contains endpoints for user-related functionalities like **signup**, **login**, and **profile management**. It handles secure user authentication using JWT and password hashing (bcrypt). The routes support creating and updating user accounts, managing tokens, and enforcing access control for protected features like video uploads and interactions."
+    },
+    {
+      "name": "Videos",
+      "description": "The **Videos folder** contains endpoints for managing video-related tasks such as uploading, retrieving, and interacting with videos. It supports features like querying videos with filters as well as handling interactions like updating title, description & thumbnail and also toggle the publish status of the video."
+    },
+    {
+      "name": "Comments",
+      "description": "The **Comment folder** contains endpoints for managing comments on videos. It allows users to retrieve all comments for a specific video, add new comments, update existing ones, and delete comments. These operations support user interaction and engagement within the video platform."
+    },
+    {
+      "name": "Likes",
+      "description": "The **Likes folder** includes endpoints to toggle likes on videos and comments, and to retrieve all videos a user has liked. It supports user engagement by allowing them to like or unlike content and view their liked videos."
+    },
+    {
+      "name": "Playlist",
+      "description": "The **Playlist folder** contains endpoints for managing playlists. Users can create, update, and delete playlists, retrieve a playlist by its ID, get all their own playlists, and add or remove videos from a playlist. These features help users organize and manage their video collections on the platform."
+    },
+    {
+      "name": "Subscriptions",
+      "description": "The **Subscription folder** includes endpoints to manage channel subscriptions. Users can toggle subscriptions to channels, retrieve a list of a channel's subscribers, and get all channels they are subscribed to. These features allow users to manage their subscriptions and keep track of their favorite channels."
+    },
+    {
+      "name": "Dashboard",
+      "description": "The **Dashboard folder** contains endpoints for retrieving channel-related data. Users can get channel statistics, such as subscriber count and video performance, and retrieve all videos associated with the channel. These features provide channel owners with insights into their content and audience."
+    }
+  ],
+  "paths": {
+    "/api/v1/healthcheck": {
+      "get": {
+        "tags": ["Default"],
+        "summary": "Health Check",
+        "description": "The **healthcheck** endpoint is used to verify that the server is running and functioning properly. It returns a simple response with message:\"OK\" indicating the application's status.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/register": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register",
+        "description": "Register a new user account.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullname": {
+                    "type": "string",
+                    "description": "New user's full name",
+                    "example": "Test User"
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "New user's username",
+                    "example": "test_user"
+                  },
+                  "password": {
+                    "type": "integer",
+                    "description": "New user's password to be set",
+                    "example": "12345"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "New user's email-id",
+                    "example": "test@demo.com"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "description": "Avatar image",
+                    "format": "binary"
+                  },
+                  "coverImage": {
+                    "type": "string",
+                    "description": "Channel's cover image",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 201,
+                  "data": {
+                    "_id": "66e586a244d40c68256f7d9b",
+                    "username": "test_user",
+                    "email": "test@demo.com",
+                    "fullname": "Test User",
+                    "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726318242/ynt1fesklbo5amgng70x.jpg",
+                    "coverImage": "http://res.cloudinary.com/streamcentral/image/upload/v1726318240/eqrcs0hvq0huagp7fk7r.jpg",
+                    "watchHistory": [],
+                    "createdAt": "2024-09-14T12:50:42.722Z",
+                    "updatedAt": "2024-09-14T12:50:42.722Z",
+                    "__v": 0
+                  },
+                  "message": "User registered successfully!!",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Error- User already exists",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Username or email already exists",
+                      "data": null
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Error-All fields required",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "All fields are required",
+                      "data": null
+                    }
+                  },
+                  "example-2": {
+                    "summary": "Error- Avatar Image",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Avatar image is required",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/login": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Login",
+        "description": "Login with existing credentials.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "username": "test_user",
+                  "password": "12345"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "user": {
+                      "_id": "66e554bcdd867e182f91b830",
+                      "username": "test_user",
+                      "email": "test@demo.com",
+                      "fullname": "Test User",
+                      "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726305467/azk2acyitkl22re8i7bj.jpg",
+                      "coverImage": "http://res.cloudinary.com/chai-backend2/image/upload/v1726305465/khzneba7hiui6gplwpg4.jpg",
+                      "watchHistory": [],
+                      "createdAt": "2024-09-14T09:17:48.085Z",
+                      "updatedAt": "2024-09-14T12:47:01.733Z",
+                      "__v": 0
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NmU1NTRiY2RkODY3ZTE4MmY5MWI4MzAiLCJlbWFpbCI6InRlc3RAZGVtby5jb20iLCJ1c2VybmFtZSI6InRlc3RfdXNlciIsImZ1bGxuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNzI2MzE4MDIxLCJleHAiOjE3MjY0MDQ0MjF9.G_nl0iPD4O8XTh2O5RRgKH2-LJ44gAY0taIJyCJGx5g",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NmU1NTRiY2RkODY3ZTE4MmY5MWI4MzAiLCJpYXQiOjE3MjYzMTgwMjEsImV4cCI6MTcyNzE4MjAyMX0.tL_2AXZ-tKis8OyMmJWkinPDeUZzfANNlbxkeIbP120"
+                  },
+                  "message": "User logged in successfully!",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "User does not exist",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Password incorrect",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/logout": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Logout",
+        "description": "Logout the currently logged-in user.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {},
+                  "message": "User logged out",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorized request",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/refresh-token": {
+      "post": {
+        "tags": ["User"],
+        "summary": "refresh-token",
+        "description": "Refresh the expired access and refresh tokens.",
+        "requestBody": {
+          "content": {}
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "email": "test@demo.com",
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NmU1ODZhMjQ0ZDQwYzY4MjU2ZjdkOWIiLCJlbWFpbCI6InRlc3RAZGVtby5jb20iLCJ1c2VybmFtZSI6InRlc3RfdXNlciIsImZ1bGxuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNzI2MzE4ODAyLCJleHAiOjE3MjY0MDUyMDJ9.uAi-3N5n9pHi7oPCHid9QSD2Os8YLGK51fjJ8rh31oc",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NmU1ODZhMjQ0ZDQwYzY4MjU2ZjdkOWIiLCJpYXQiOjE3MjYzMTg4MDIsImV4cCI6MTcyNzE4MjgwMn0.k43NJokEntCGpRjueAkhA2voHt5ps7eA9SlrCrk9b3Y"
+                  },
+                  "message": "New tokens generated",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorized request",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/change-password": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Change password",
+        "description": "Change the current user's password.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "oldPassword": "12345",
+                  "newPassword": "new-password"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {},
+                  "message": "Password changed successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Error- same old & new passwords",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Old and New passwords are same",
+                      "data": null
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Error- old password incorrect",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Old password incorrect",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/current-user": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get current user",
+        "description": "Get data of the currently logged-in user.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e586a244d40c68256f7d9b",
+                    "username": "test_user",
+                    "email": "test@demo.com",
+                    "fullname": "Test User",
+                    "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726318242/ynt1fesklbo5amgng70x.jpg",
+                    "coverImage": "http://res.cloudinary.com/streamcentral/image/upload/v1726318240/eqrcs0hvq0huagp7fk7r.jpg",
+                    "watchHistory": [],
+                    "createdAt": "2024-09-14T12:50:42.722Z",
+                    "updatedAt": "2024-09-14T13:11:45.313Z",
+                    "__v": 0
+                  },
+                  "message": "Current user fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorized request",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/update-account": {
+      "patch": {
+        "tags": ["User"],
+        "summary": "Update account",
+        "description": "Update user details (username and email)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "username": "test_new_user",
+                  "email": "test_new@demo.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e586a244d40c68256f7d9b",
+                    "username": "test_new_user",
+                    "email": "test_new@demo.com",
+                    "fullname": "Test User",
+                    "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726318242/ynt1fesklbo5amgng70x.jpg",
+                    "coverImage": "http://res.cloudinary.com/streamcentral/image/upload/v1726318240/eqrcs0hvq0huagp7fk7r.jpg",
+                    "watchHistory": [],
+                    "createdAt": "2024-09-14T12:50:42.722Z",
+                    "updatedAt": "2024-09-14T13:43:13.755Z",
+                    "__v": 0
+                  },
+                  "message": "Account details updated successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Fullname and email are required",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/update-avatar": {
+      "patch": {
+        "tags": ["User"],
+        "summary": "Update avatar image",
+        "description": "Update user avatar image.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e586a244d40c68256f7d9b",
+                    "username": "test_new_user",
+                    "email": "test_new@demo.com",
+                    "fullname": "Test User",
+                    "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg",
+                    "coverImage": "http://res.cloudinary.com/streamcentral/image/upload/v1726318240/eqrcs0hvq0huagp7fk7r.jpg",
+                    "watchHistory": [],
+                    "createdAt": "2024-09-14T12:50:42.722Z",
+                    "updatedAt": "2024-09-14T13:46:08.661Z",
+                    "__v": 0
+                  },
+                  "message": "Avatar updated successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Avatar file is missing",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/update-coverImage": {
+      "patch": {
+        "tags": ["User"],
+        "summary": "Update coverImage",
+        "description": "Update user cover image.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coverImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e586a244d40c68256f7d9b",
+                    "username": "test_new_user",
+                    "email": "test_new@demo.com",
+                    "fullname": "Test User",
+                    "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg",
+                    "coverImage": "http://res.cloudinary.com/streamcentral/image/upload/v1726321636/mb2w2va0zdrfdusrc0pd.jpg",
+                    "watchHistory": [],
+                    "createdAt": "2024-09-14T12:50:42.722Z",
+                    "updatedAt": "2024-09-14T13:47:16.768Z",
+                    "__v": 0
+                  },
+                  "message": "Cover image updated successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Cover image file is missing",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/channel-profile/{username}": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get channel profile",
+        "description": "Get user channel profile information.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "test_new_user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e13800a7a3f41b193bcb5f",
+                    "username": "user_1",
+                    "email": "user_1_@test.com",
+                    "fullname": "User 1",
+                    "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036865/m9uwi0mwfr6lene7jowx.jpg",
+                    "coverImage": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036936/kuyirth7fi8r5x3wgorf.jpg",
+                    "subscribersCount": 0,
+                    "channelsSubscribedToCount": 0,
+                    "isSubscribed": false
+                  },
+                  "message": "User fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Error- Channel doesn't exist",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Channel does not exist",
+                      "data": null
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Error- Username missing",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Username is missing",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/history": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Watch history",
+        "description": "Get the current user's watch history.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": [
+                    {
+                      "_id": "66e13ccdc1eab13998a210ef",
+                      "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726037193/vhtjim1lqpqeqpjewwaz.mp4",
+                      "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726037196/oqsdzbnuzahz75n1pa2i.jpg",
+                      "title": "Test video 1- user1",
+                      "duration": 13.421995,
+                      "views": 364,
+                      "isPublished": true,
+                      "owner": {
+                        "_id": "66e13800a7a3f41b193bcb5f",
+                        "username": "user_1",
+                        "fullname": "User 1",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036865/m9uwi0mwfr6lene7jowx.jpg"
+                      },
+                      "createdAt": "2024-09-11T06:46:37.443Z",
+                      "updatedAt": "2024-09-21T15:58:01.123Z",
+                      "__v": 0,
+                      "description": "This is a video publish test"
+                    },
+                    {
+                      "_id": "66e1450b47ca77d1a1a41797",
+                      "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039304/xnqsswr2ny6beowalrvw.mp4",
+                      "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039306/wzoqdumt1rdmiaxcxa23.jpg",
+                      "title": "Test video 1- user2",
+                      "description": "This is a video publish test",
+                      "duration": 13.696,
+                      "views": 374,
+                      "isPublished": true,
+                      "owner": {
+                        "_id": "66e1386da7a3f41b193bcb63",
+                        "username": "user_2",
+                        "fullname": "User 2",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036077/ettbemrlginabmyn9acm.jpg"
+                      },
+                      "createdAt": "2024-09-11T07:21:47.313Z",
+                      "updatedAt": "2024-09-21T15:57:53.249Z",
+                      "__v": 0
+                    },
+                    {
+                      "_id": "66e1454d47ca77d1a1a417a6",
+                      "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039369/pum28vjiad40l3mjyzek.mp4",
+                      "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039372/wyqutz72e3pskgki2z8i.jpg",
+                      "title": "Test video 1- user3",
+                      "description": "This is a video publish test",
+                      "duration": 5.312,
+                      "views": 11,
+                      "isPublished": true,
+                      "owner": {
+                        "_id": "66e1390ba7a3f41b193bcb67",
+                        "username": "user_3",
+                        "fullname": "User 3",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036234/pqobf5j8sjodhng8g8co.jpg"
+                      },
+                      "createdAt": "2024-09-11T07:22:53.387Z",
+                      "updatedAt": "2024-09-17T07:56:32.450Z",
+                      "__v": 0
+                    }
+                  ],
+                  "message": "Watch history fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/delete": {
+      "delete": {
+        "tags": ["User"],
+        "summary": "Delete user",
+        "description": "Delete the current user's profile, including all the uploaded videos, subscriptions, likes, comments and playlists.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": 200,
+                  "data": {},
+                  "message": "User profile deleted successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Invalid Access Token",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/videos/publish": {
+      "post": {
+        "tags": ["Videos"],
+        "summary": "Publish video",
+        "description": "Publish a new video.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Cute dog video"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "An adorable pup steals the spotlight with playful antics and irresistible charm!"
+                  },
+                  "videoFile": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9228e05c4929d08fced5a",
+                    "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                    "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                    "title": "Cute dog video",
+                    "description": "An adorable pup steals the spotlight with playful antics and irresistible charm!",
+                    "duration": 13.421995,
+                    "views": 0,
+                    "isPublished": true,
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "createdAt": "2024-09-17T06:32:46.174Z",
+                    "updatedAt": "2024-09-17T06:32:46.174Z",
+                    "__v": 0
+                  },
+                  "message": "Video published successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Error-Video file required",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Video file is required",
+                      "data": null
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Error- Title & desc required",
+                    "value": {
+                      "statusCode": 400,
+                      "success": false,
+                      "message": "Title and description are required",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/videos/all": {
+      "get": {
+        "tags": ["Videos"],
+        "summary": "Get all videos",
+        "description": "Get all uploaded videos and supports filters like `page`, `limit`, `query`, `sortBy` (e.g., `\"createdAt\"`), `sortType` (e.g., `\"desc\"`), and `userId (to fetch videos of specific creator)` to customize the results based on pagination, search terms, sorting, and specific users.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Limit the number of results per page",
+            "example": "3"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Go to a specific page ",
+            "example": "2"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sort reults based on specific field",
+            "example": "title"
+          },
+          {
+            "name": "sortType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sorting order",
+            "example": "asc"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Success-all videos",
+                    "value": {
+                      "statusCode": 200,
+                      "data": {
+                        "docs": [
+                          {
+                            "_id": "66e9237005c4929d08fced65",
+                            "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554989/lwepouce1nhqnwpuhubp.mp4",
+                            "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554991/ogjvoeye0fvwnu4ab4fa.jpg",
+                            "title": "sample video-1",
+                            "description": "This is a testing video-1",
+                            "duration": 13.696,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-17T06:36:32.358Z",
+                            "updatedAt": "2024-09-17T06:36:32.358Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e586a244d40c68256f7d9b",
+                              "username": "test_new_user",
+                              "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e9228e05c4929d08fced5a",
+                            "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                            "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                            "title": "Cute dog video",
+                            "description": "An adorable pup steals the spotlight with playful antics and irresistible charm!",
+                            "duration": 13.421995,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-17T06:32:46.174Z",
+                            "updatedAt": "2024-09-17T06:32:46.174Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e586a244d40c68256f7d9b",
+                              "username": "test_new_user",
+                              "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e145a447ca77d1a1a417b4",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039456/uhwihyy43utavds5x5v0.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039459/jrm6dyvmeyktqtoohlzy.jpg",
+                            "title": "Test video 1- user4",
+                            "description": "This is a video publish test",
+                            "duration": 13.421995,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:24:20.133Z",
+                            "updatedAt": "2024-09-11T07:24:20.133Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e13a0ec1eab13998a210b5",
+                              "username": "user_4",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e1458047ca77d1a1a417aa",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039421/xw0t5sbwq8wocxd4abhe.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039423/dovhmgv5jiilbbzjg7pm.jpg",
+                            "title": "Test video 2- user3",
+                            "description": "This is a video publish test",
+                            "duration": 13.696,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:23:44.068Z",
+                            "updatedAt": "2024-09-11T07:23:44.068Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e1390ba7a3f41b193bcb67",
+                              "username": "user_3",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036234/pqobf5j8sjodhng8g8co.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e1454d47ca77d1a1a417a6",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039369/pum28vjiad40l3mjyzek.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039372/wyqutz72e3pskgki2z8i.jpg",
+                            "title": "Test video 1- user3",
+                            "description": "This is a video publish test",
+                            "duration": 5.312,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:22:53.387Z",
+                            "updatedAt": "2024-09-11T07:22:53.387Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e1390ba7a3f41b193bcb67",
+                              "username": "user_3",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036234/pqobf5j8sjodhng8g8co.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e1452347ca77d1a1a4179b",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039327/xk6dleiuyn93tsthjiwy.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039330/rih0hlenaezjnjz6uv35.jpg",
+                            "title": "Test video 2- user2",
+                            "description": "This is a video publish test",
+                            "duration": 5.312,
+                            "views": 283,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:22:11.244Z",
+                            "updatedAt": "2024-09-11T08:43:03.028Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e1386da7a3f41b193bcb63",
+                              "username": "user_2",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036077/ettbemrlginabmyn9acm.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e1450b47ca77d1a1a41797",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039304/xnqsswr2ny6beowalrvw.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039306/wzoqdumt1rdmiaxcxa23.jpg",
+                            "title": "Test video 1- user2",
+                            "description": "This is a video publish test",
+                            "duration": 13.696,
+                            "views": 370,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:21:47.313Z",
+                            "updatedAt": "2024-09-11T08:40:19.610Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e1386da7a3f41b193bcb63",
+                              "username": "user_2",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036077/ettbemrlginabmyn9acm.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e1448747ca77d1a1a4178f",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039172/wynxbbxtnawawb6bduql.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039174/d67lvqgh7fnw8j7uqqt1.webp",
+                            "title": "Test video 2- user1",
+                            "description": "This is a video publish test",
+                            "duration": 13.696,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:19:35.161Z",
+                            "updatedAt": "2024-09-11T07:19:35.161Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e13800a7a3f41b193bcb5f",
+                              "username": "user_1",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036865/m9uwi0mwfr6lene7jowx.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e13ccdc1eab13998a210ef",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726037193/vhtjim1lqpqeqpjewwaz.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726037196/oqsdzbnuzahz75n1pa2i.jpg",
+                            "title": "Test video 1- user1",
+                            "duration": 13.421995,
+                            "views": 362,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T06:46:37.443Z",
+                            "updatedAt": "2024-09-11T12:39:17.165Z",
+                            "__v": 0,
+                            "description": "This is a video publish test",
+                            "ownerDetails": {
+                              "_id": "66e13800a7a3f41b193bcb5f",
+                              "username": "user_1",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036865/m9uwi0mwfr6lene7jowx.jpg"
+                            }
+                          }
+                        ],
+                        "totalDocs": 9,
+                        "limit": 10,
+                        "page": 1,
+                        "totalPages": 1,
+                        "pagingCounter": 1,
+                        "hasPrevPage": false,
+                        "hasNextPage": false,
+                        "prevPage": null,
+                        "nextPage": null
+                      },
+                      "message": "Videos fetched successfully",
+                      "success": true
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Success- Query params",
+                    "value": {
+                      "statusCode": 200,
+                      "data": {
+                        "docs": [
+                          {
+                            "_id": "66e1454d47ca77d1a1a417a6",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039369/pum28vjiad40l3mjyzek.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039372/wyqutz72e3pskgki2z8i.jpg",
+                            "title": "Test video 1- user3",
+                            "description": "This is a video publish test",
+                            "duration": 5.312,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:22:53.387Z",
+                            "updatedAt": "2024-09-11T07:22:53.387Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e1390ba7a3f41b193bcb67",
+                              "username": "user_3",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036234/pqobf5j8sjodhng8g8co.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e145a447ca77d1a1a417b4",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039456/uhwihyy43utavds5x5v0.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039459/jrm6dyvmeyktqtoohlzy.jpg",
+                            "title": "Test video 1- user4",
+                            "description": "This is a video publish test",
+                            "duration": 13.421995,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:24:20.133Z",
+                            "updatedAt": "2024-09-11T07:24:20.133Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e13a0ec1eab13998a210b5",
+                              "username": "user_4",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg"
+                            }
+                          },
+                          {
+                            "_id": "66e1448747ca77d1a1a4178f",
+                            "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039172/wynxbbxtnawawb6bduql.mp4",
+                            "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039174/d67lvqgh7fnw8j7uqqt1.webp",
+                            "title": "Test video 2- user1",
+                            "description": "This is a video publish test",
+                            "duration": 13.696,
+                            "views": 0,
+                            "isPublished": true,
+                            "createdAt": "2024-09-11T07:19:35.161Z",
+                            "updatedAt": "2024-09-11T07:19:35.161Z",
+                            "__v": 0,
+                            "ownerDetails": {
+                              "_id": "66e13800a7a3f41b193bcb5f",
+                              "username": "user_1",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036865/m9uwi0mwfr6lene7jowx.jpg"
+                            }
+                          }
+                        ],
+                        "totalDocs": 9,
+                        "limit": 3,
+                        "page": 2,
+                        "totalPages": 3,
+                        "pagingCounter": 4,
+                        "hasPrevPage": true,
+                        "hasNextPage": true,
+                        "prevPage": 1,
+                        "nextPage": 3
+                      },
+                      "message": "Videos fetched successfully",
+                      "success": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/videos/id/{videoId}": {
+      "get": {
+        "tags": ["Videos"],
+        "summary": "Get video by Id",
+        "description": "Get a specific video using video id.",
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "video": [
+                      {
+                        "_id": "66e9228e05c4929d08fced5a",
+                        "title": "Cute dog video",
+                        "description": "An adorable pup steals the spotlight with playful antics and irresistible charm!",
+                        "duration": 13.421995,
+                        "views": 0,
+                        "owner": {
+                          "_id": "66e586a244d40c68256f7d9b",
+                          "username": "test_new_user",
+                          "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg",
+                          "subscribersCount": 0,
+                          "isSubscribed": false
+                        },
+                        "createdAt": "2024-09-17T06:32:46.174Z",
+                        "likesCount": 0,
+                        "isLiked": false
+                      }
+                    ]
+                  },
+                  "message": "Video found successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Video not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/videos/update/{videoId}": {
+      "patch": {
+        "tags": ["Videos"],
+        "summary": "Update by Id",
+        "description": "Update video details (title, description, thumbnail).",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "If title needs to be updated",
+                    "example": "Test video 3-user1"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "If description needs to be updated",
+                    "example": "Testing update video "
+                  },
+                  "isPublished": {
+                    "type": "boolean",
+                    "description": "If publish status has to be updated",
+                    "example": "false"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "description": "If thumbnail needs to be updated",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9228e05c4929d08fced5a",
+                    "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                    "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                    "title": "Cute dog video",
+                    "description": "Testing update video ",
+                    "duration": 13.421995,
+                    "views": 1,
+                    "isPublished": true,
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "createdAt": "2024-09-17T06:32:46.174Z",
+                    "updatedAt": "2024-09-17T06:58:05.604Z",
+                    "__v": 0
+                  },
+                  "message": "Video updated successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Fields to be updated are required",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Video not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/videos/toggle-publish-status/{videoId}": {
+      "patch": {
+        "tags": ["Videos"],
+        "summary": "Toggle publish status",
+        "description": "Toggle the published status of a video.",
+        "requestBody": {
+          "content": {}
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9228e05c4929d08fced5a"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "updatedVideo": {
+                      "_id": "66e9228e05c4929d08fced5a",
+                      "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                      "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                      "title": "Cute dog video",
+                      "description": "Testing update video ",
+                      "duration": 13.421995,
+                      "views": 1,
+                      "isPublished": false,
+                      "owner": "66e586a244d40c68256f7d9b",
+                      "createdAt": "2024-09-17T06:32:46.174Z",
+                      "updatedAt": "2024-09-17T07:04:24.104Z",
+                      "__v": 0
+                    }
+                  },
+                  "message": "Publish status changed successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Video not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/videos/delete/{videoId}": {
+      "delete": {
+        "tags": ["Videos"],
+        "summary": "Delete video",
+        "description": "Delete a video.",
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comments/all/{videoId}": {
+      "get": {
+        "tags": ["Comments"],
+        "summary": "All comments",
+        "description": "Get all comments for a specific video, with optional filters for `sortType`, `limit`, and `page`. This allows for sorting comments by criteria (created date), limiting the number of comments returned, and paginating through results.",
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Success",
+                    "value": {
+                      "statusCode": 200,
+                      "data": {
+                        "docs": [
+                          {
+                            "_id": "66e19011e7397868d0fb0874",
+                            "content": "Comment-2 User-4",
+                            "owner": {
+                              "username": "user_4",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg"
+                            },
+                            "createdAt": "2024-09-11T12:41:53.218Z",
+                            "likesCount": 0,
+                            "isLiked": false
+                          },
+                          {
+                            "_id": "66e1900ae7397868d0fb0870",
+                            "content": "Comment-1 User-4",
+                            "owner": {
+                              "username": "user_4",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg"
+                            },
+                            "createdAt": "2024-09-11T12:41:46.873Z",
+                            "likesCount": 0,
+                            "isLiked": false
+                          }
+                        ],
+                        "totalDocs": 2,
+                        "limit": 10,
+                        "page": 1,
+                        "totalPages": 1,
+                        "pagingCounter": 1,
+                        "hasPrevPage": false,
+                        "hasNextPage": false,
+                        "prevPage": null,
+                        "nextPage": null
+                      },
+                      "message": "Comments fetched successfully",
+                      "success": true
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Success- Pagination",
+                    "value": {
+                      "statusCode": 200,
+                      "data": {
+                        "docs": [
+                          {
+                            "_id": "66e19011e7397868d0fb0874",
+                            "content": "Comment-2 User-4",
+                            "owner": {
+                              "username": "user_4",
+                              "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg"
+                            },
+                            "createdAt": "2024-09-11T12:41:53.218Z",
+                            "likesCount": 0,
+                            "isLiked": false
+                          }
+                        ],
+                        "totalDocs": 2,
+                        "limit": 1,
+                        "page": 1,
+                        "totalPages": 2,
+                        "pagingCounter": 1,
+                        "hasPrevPage": false,
+                        "hasNextPage": true,
+                        "prevPage": null,
+                        "nextPage": 2
+                      },
+                      "message": "Comments fetched successfully",
+                      "success": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Video not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comments/add-comment/{videoId}": {
+      "post": {
+        "tags": ["Comments"],
+        "summary": "Add comment",
+        "description": "Add a new comment to a video.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "content": "The dog in the video is so cute!!"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "content": "The dog in the video is so cute!!",
+                    "video": "66e9228e05c4929d08fced5a",
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "_id": "66e9af28fadeb15f04065ec0",
+                    "createdAt": "2024-09-17T16:32:40.549Z",
+                    "updatedAt": "2024-09-17T16:32:40.549Z",
+                    "__v": 0
+                  },
+                  "message": "Comment created successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Video not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comments/update-comment/{videoId}": {
+      "patch": {
+        "tags": ["Comments"],
+        "summary": "Update comment",
+        "description": "Update an existing comment.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "content": "The puppy in the video is so cute!!"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9af28fadeb15f04065ec0",
+                    "content": "The puppy in the video is so cute!!",
+                    "video": "66e9228e05c4929d08fced5a",
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "createdAt": "2024-09-17T16:32:40.549Z",
+                    "updatedAt": "2024-09-17T16:34:56.784Z",
+                    "__v": 0
+                  },
+                  "message": "Comment updated successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorised request",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Comment not foumd",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comments/delete-comment/{videoId}": {
+      "delete": {
+        "tags": ["Comments"],
+        "summary": "Delete comment",
+        "description": "Delete a comment.",
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {},
+                  "message": "Comment deleted successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorised request",
+                  "data": null
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 500,
+                  "success": false,
+                  "message": "Comment not foumd",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/likes/toggle/video/{videoId}": {
+      "post": {
+        "tags": ["Likes"],
+        "summary": "Toggle video like",
+        "description": "Toggle like for a video.",
+        "requestBody": {
+          "content": {}
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9af28fadeb15f04065ec0"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Success- Video Liked",
+                    "value": {
+                      "statusCode": 200,
+                      "data": true,
+                      "message": "Video liked successfully",
+                      "success": true
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Success- Video Disliked",
+                    "value": {
+                      "statusCode": 200,
+                      "data": false,
+                      "message": "Video disliked successfully",
+                      "success": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/likes/toggle/comment/{videoId}": {
+      "post": {
+        "tags": ["Likes"],
+        "summary": "Toggle comment like",
+        "description": "Toggle like for a comment.",
+        "requestBody": {
+          "content": {}
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e19049e7397868d0fb0880"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Success- Comment liked",
+                    "value": {
+                      "statusCode": 200,
+                      "data": true,
+                      "message": "Comment liked successfully",
+                      "success": true
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Success- Comment disliked",
+                    "value": {
+                      "statusCode": 200,
+                      "data": false,
+                      "message": "Comment disliked successfully",
+                      "success": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/likes/videos": {
+      "get": {
+        "tags": ["Likes"],
+        "summary": "Get liked videos",
+        "description": "Get all the videos liked by the currently logged in user.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": [
+                    {
+                      "likedVideo": {
+                        "_id": "66e9237005c4929d08fced65",
+                        "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554989/lwepouce1nhqnwpuhubp.mp4",
+                        "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554991/ogjvoeye0fvwnu4ab4fa.jpg",
+                        "title": "sample video-1",
+                        "description": "This is a testing video-1",
+                        "duration": 13.696,
+                        "views": 0,
+                        "isPublished": true,
+                        "owner": "66e586a244d40c68256f7d9b",
+                        "createdAt": "2024-09-17T06:36:32.358Z",
+                        "ownerDetails": {
+                          "username": "test_new_user",
+                          "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg"
+                        }
+                      }
+                    },
+                    {
+                      "likedVideo": {
+                        "_id": "66e9228e05c4929d08fced5a",
+                        "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                        "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                        "title": "Cute dog video",
+                        "description": "Testing update video ",
+                        "duration": 13.421995,
+                        "views": 1,
+                        "isPublished": false,
+                        "owner": "66e586a244d40c68256f7d9b",
+                        "createdAt": "2024-09-17T06:32:46.174Z",
+                        "ownerDetails": {
+                          "username": "test_new_user",
+                          "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg"
+                        }
+                      }
+                    },
+                    {
+                      "likedVideo": {
+                        "_id": "66e145a447ca77d1a1a417b4",
+                        "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039456/uhwihyy43utavds5x5v0.mp4",
+                        "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039459/jrm6dyvmeyktqtoohlzy.jpg",
+                        "title": "Test video 1- user4",
+                        "description": "This is a video publish test",
+                        "duration": 13.421995,
+                        "views": 0,
+                        "isPublished": true,
+                        "owner": "66e13a0ec1eab13998a210b5",
+                        "createdAt": "2024-09-11T07:24:20.133Z",
+                        "ownerDetails": {
+                          "username": "user_4",
+                          "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg"
+                        }
+                      }
+                    }
+                  ],
+                  "message": "Liked videos fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/playlists/": {
+      "post": {
+        "tags": ["Playlist"],
+        "summary": "Create Playlist",
+        "description": "Create a new playlist.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "name": "Dog videos playlist",
+                  "description": "This playlist contains videos of cute dogs."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "name": "Dog videos playlist",
+                    "description": "This playlist contains videos of cute dogs.",
+                    "videos": [],
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "_id": "66e9bc4afadeb15f04065f0a",
+                    "createdAt": "2024-09-17T17:28:42.348Z",
+                    "updatedAt": "2024-09-17T17:28:42.348Z",
+                    "__v": 0
+                  },
+                  "message": "Playlist created successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Name and description is required",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/playlists/{playlistID}": {
+      "get": {
+        "tags": ["Playlist"],
+        "summary": "Get playlist by Id",
+        "description": "Get details of a specific playlist using playlist's ID",
+        "parameters": [
+          {
+            "name": "playlistID",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9bc4afadeb15f04065f0a"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9bc4afadeb15f04065f0a",
+                    "name": "Dog videos playlist",
+                    "description": "This playlist contains videos of cute dogs.",
+                    "videos": [
+                      {
+                        "_id": "66e9228e05c4929d08fced5a",
+                        "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                        "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                        "title": "Cute dog video",
+                        "description": "Testing update video ",
+                        "duration": 13.421995,
+                        "views": 1,
+                        "createdAt": "2024-09-17T06:32:46.174Z"
+                      }
+                    ],
+                    "owner": {
+                      "username": "test_new_user",
+                      "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg"
+                    },
+                    "createdAt": "2024-09-17T17:28:42.348Z",
+                    "updatedAt": "2024-09-17T18:37:12.332Z",
+                    "totalVideos": 1,
+                    "totalViews": 1
+                  },
+                  "message": "Playlist fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorized request",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Playlist not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/playlists/{playlistId}": {
+      "patch": {
+        "tags": ["Playlist"],
+        "summary": "Update Playlist",
+        "description": "Update an existing playlist.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "name": "Puppy videos playlist"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "playlistId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9bc4afadeb15f04065f0a"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9bc4afadeb15f04065f0a",
+                    "name": "Puppy videos playlist",
+                    "description": "This playlist contains videos of cute dogs.",
+                    "videos": ["66e9228e05c4929d08fced5a"],
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "createdAt": "2024-09-17T17:28:42.348Z",
+                    "updatedAt": "2024-09-21T14:27:07.036Z",
+                    "__v": 0
+                  },
+                  "message": "Playlist updated successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Name or description is required",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Playlist"],
+        "summary": "Delete Playlist",
+        "description": "Delete a playlist.",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9bc4afadeb15f04065f0a"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {},
+                  "message": "Playlist deleted successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Playlist not found",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/playlists/user/{userId}": {
+      "get": {
+        "tags": ["Playlist"],
+        "summary": "Get User Playlists",
+        "description": "Get all playlists created by a specific user.",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": [
+                    {
+                      "_id": "66e9bc4afadeb15f04065f0a",
+                      "name": "Dog videos playlist",
+                      "description": "This playlist contains videos of cute dogs.",
+                      "updatedAt": "2024-09-17T18:37:12.332Z",
+                      "totalVideos": 1,
+                      "totalViews": 1
+                    }
+                  ],
+                  "message": "User playlists found successfully",
+                  "success": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/api/v1/playlists/add/{videoId}/{playlistId}": {
+      "patch": {
+        "tags": ["Playlist"],
+        "summary": "Add video to playlist",
+        "description": "Add a video to a playlist.",
+        "requestBody": {
+          "content": {}
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9228e05c4929d08fced5a"
+          },
+          {
+            "name": "playlistId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9bc4afadeb15f04065f0a"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9bc4afadeb15f04065f0a",
+                    "name": "Dog videos playlist",
+                    "description": "This playlist contains videos of cute dogs.",
+                    "videos": ["66e9228e05c4929d08fced5a"],
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "createdAt": "2024-09-17T17:28:42.348Z",
+                    "updatedAt": "2024-09-17T18:37:12.332Z",
+                    "__v": 0
+                  },
+                  "message": "Video added to the playlist successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorized request",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Error- Playlist not found",
+                    "value": {
+                      "statusCode": 404,
+                      "success": false,
+                      "message": "Playlist not found",
+                      "data": null
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Error- Video not found",
+                    "value": {
+                      "statusCode": 404,
+                      "success": false,
+                      "message": "Video not found",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/playlists/remove/{videoId}/{playlistId}": {
+      "patch": {
+        "tags": ["Playlist"],
+        "summary": "Remove video from playlist",
+        "description": "Remove a video from a playlist.",
+        "requestBody": {
+          "content": {}
+        },
+        "parameters": [
+          {
+            "name": "videoId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9228e05c4929d08fced5a"
+          },
+          {
+            "name": "playlistId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e9bc4afadeb15f04065f0a"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "_id": "66e9bc4afadeb15f04065f0a",
+                    "name": "Puppy videos playlist",
+                    "description": "This playlist contains videos of cute dogs.",
+                    "videos": [],
+                    "owner": "66e586a244d40c68256f7d9b",
+                    "createdAt": "2024-09-17T17:28:42.348Z",
+                    "updatedAt": "2024-09-21T14:36:09.575Z",
+                    "__v": 0
+                  },
+                  "message": "Video removed from the playlist successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "success": false,
+                  "message": "Unauthorized request",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Video does not exist in the playlist",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/channel/{channelId}": {
+      "get": {
+        "tags": ["Subscriptions"],
+        "summary": "Get channel's subscribers",
+        "description": "Get a list of subscribers for a specific channel.",
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e1386da7a3f41b193bcb63"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": [
+                    {
+                      "subscriber": {
+                        "_id": "66e13a0ec1eab13998a210b5",
+                        "username": "user_4",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036494/zhnrn7ifyzwvwlgsj736.jpg",
+                        "subscribedToSubscriber": false,
+                        "subscribersCount": 0
+                      }
+                    },
+                    {
+                      "subscriber": {
+                        "_id": "66e586a244d40c68256f7d9b",
+                        "username": "test_new_user",
+                        "avatar": "http://res.cloudinary.com/streamcentral/image/upload/v1726321564/ocwxcjf8srastszqjhgy.jpg",
+                        "subscribedToSubscriber": false,
+                        "subscribersCount": 0
+                      }
+                    }
+                  ],
+                  "message": "Subscribers fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Channel does not exist",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Subscriptions"],
+        "summary": "Toggle subscription",
+        "description": "Subscribe / Unsubscribe a channel.",
+        "requestBody": {
+          "content": {}
+        },
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e1386da7a3f41b193bcb63"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "example-0": {
+                    "summary": "Success- subscribed",
+                    "value": {
+                      "statusCode": 200,
+                      "data": true,
+                      "message": "Subscribed successfully",
+                      "success": true
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Success- unsubscribed",
+                    "value": {
+                      "statusCode": 200,
+                      "data": false,
+                      "message": "Unsubscribed successfully",
+                      "success": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "success": false,
+                  "message": "Channel does not exist",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/subscriber/{subscriberId}": {
+      "get": {
+        "tags": ["Subscriptions"],
+        "summary": "Get user's subscribed channels",
+        "description": "Get a list of channels subscribed to by a specific user.",
+        "parameters": [
+          {
+            "name": "subscriberId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "66e586a244d40c68256f7d9b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": [
+                    {
+                      "subscribedChannel": {
+                        "_id": "66e1386da7a3f41b193bcb63",
+                        "username": "user_2",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036077/ettbemrlginabmyn9acm.jpg",
+                        "latestVideo": {
+                          "_id": "66e1452347ca77d1a1a4179b",
+                          "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039327/xk6dleiuyn93tsthjiwy.mp4",
+                          "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039330/rih0hlenaezjnjz6uv35.jpg",
+                          "title": "Test video 2- user2",
+                          "description": "This is a video publish test",
+                          "duration": 5.312,
+                          "views": 284,
+                          "owner": "66e1386da7a3f41b193bcb63",
+                          "createdAt": "2024-09-11T07:22:11.244Z"
+                        }
+                      }
+                    },
+                    {
+                      "subscribedChannel": {
+                        "_id": "66e13800a7a3f41b193bcb5f",
+                        "username": "user_1",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036865/m9uwi0mwfr6lene7jowx.jpg",
+                        "latestVideo": {
+                          "_id": "66e1448747ca77d1a1a4178f",
+                          "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039172/wynxbbxtnawawb6bduql.mp4",
+                          "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039174/d67lvqgh7fnw8j7uqqt1.webp",
+                          "title": "Test video 2- user1",
+                          "description": "This is a video publish test",
+                          "duration": 13.696,
+                          "views": 1,
+                          "owner": "66e13800a7a3f41b193bcb5f",
+                          "createdAt": "2024-09-11T07:19:35.161Z"
+                        }
+                      }
+                    },
+                    {
+                      "subscribedChannel": {
+                        "_id": "66e1390ba7a3f41b193bcb67",
+                        "username": "user_3",
+                        "avatar": "http://res.cloudinary.com/chai-backend2/image/upload/v1726036234/pqobf5j8sjodhng8g8co.jpg",
+                        "latestVideo": {
+                          "_id": "66e1458047ca77d1a1a417aa",
+                          "videoFile": "http://res.cloudinary.com/chai-backend2/video/upload/v1726039421/xw0t5sbwq8wocxd4abhe.mp4",
+                          "thumbnail": "http://res.cloudinary.com/chai-backend2/image/upload/v1726039423/dovhmgv5jiilbbzjg7pm.jpg",
+                          "title": "Test video 2- user3",
+                          "description": "This is a video publish test",
+                          "duration": 13.696,
+                          "views": 0,
+                          "owner": "66e1390ba7a3f41b193bcb67",
+                          "createdAt": "2024-09-11T07:23:44.068Z"
+                        }
+                      }
+                    }
+                  ],
+                  "message": "Subscribed channels fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "success": false,
+                  "message": "Subscriber id is invalid",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/stats": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get channel stats",
+        "description": "Get channel metrics such as total subscribers, total likes, video views, and the number of videos uploaded.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": {
+                    "totalSubscribers": 0,
+                    "totalLikes": 2,
+                    "totalViews": 1,
+                    "totalVideos": 2
+                  },
+                  "message": "Channel's stats fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/videos": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get channel videos",
+        "description": "Get all the videos uploaded by the current user's channel.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "statusCode": 200,
+                  "data": [
+                    {
+                      "_id": "66e9237005c4929d08fced65",
+                      "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554989/lwepouce1nhqnwpuhubp.mp4",
+                      "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554991/ogjvoeye0fvwnu4ab4fa.jpg",
+                      "title": "sample video-1",
+                      "description": "This is a testing video-1",
+                      "views": 0,
+                      "isPublished": true,
+                      "createdAt": {
+                        "year": 2024,
+                        "month": 9,
+                        "day": 17
+                      },
+                      "likesCount": 1
+                    },
+                    {
+                      "_id": "66e9228e05c4929d08fced5a",
+                      "videoFile": "http://res.cloudinary.com/streamcentral/video/upload/v1726554762/zbgg3eq8sztjsetmxqus.mp4",
+                      "thumbnail": "http://res.cloudinary.com/streamcentral/image/upload/v1726554765/giqbrgz3wxcey5vbzs32.jpg",
+                      "title": "Cute dog video",
+                      "description": "Testing update video ",
+                      "views": 1,
+                      "isPublished": true,
+                      "createdAt": {
+                        "year": 2024,
+                        "month": 9,
+                        "day": 17
+                      },
+                      "likesCount": 1
+                    }
+                  ],
+                  "message": "Channel's videos fetched successfully",
+                  "success": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
